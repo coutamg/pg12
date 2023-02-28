@@ -2145,10 +2145,10 @@ set_dummy_tlist_references(Plan *plan, int rtoffset)
 /*
  * build_tlist_index --- build an index data structure for a child tlist
  *
- * In most cases, subplan tlists will be "flat" tlists with only Vars,
- * so we try to optimize that case by extracting information about Vars
+ * In most cases, subplan tmation about Vars
  * in advance.  Matching a parent tlist to a child is still an O(N^2)
- * operation, but at least with a much smaller constant factor than plain
+ * operation, but at least with a much smaller constalists will be "flat" tlists with only Vars,
+ * so we try to optimize that case by extracting infornt factor than plain
  * tlist_member() searches.
  *
  * The result of this function is an indexed_tlist struct to pass to

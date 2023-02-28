@@ -237,6 +237,7 @@
 #include "utils/syscache.h"
 #include "utils/tuplesort.h"
 #include "utils/datum.h"
+#include "nodes/print.h"
 
 
 static void select_current_set(AggState *aggstate, int setno, bool is_hash);
@@ -2138,6 +2139,7 @@ ExecInitAgg(Agg *node, EState *estate, int eflags)
 	aggstate->sort_in = NULL;
 	aggstate->sort_out = NULL;
 
+    elog_node_display(LOG, "dddtest:agg node", node, false);
 	/*
 	 * phases[0] always exists, but is dummy in sorted/plain mode
 	 */
@@ -2220,7 +2222,8 @@ ExecInitAgg(Agg *node, EState *estate, int eflags)
 	outerPlanState(aggstate) = ExecInitNode(outerPlan, estate, eflags);
 
 	/*
-	 * initialize source tuple type.
+	 * initialize source tuple type. outerops 用 TTSOpsVirtual, TTSOpsHeapTuple
+     * TTSOpsMinimalTuple, TTSOpsBufferHeapTuple 四个之一, 默认为 TTSOpsVirtual
 	 */
 	aggstate->ss.ps.outerops =
 		ExecGetResultSlotOps(outerPlanState(&aggstate->ss),
@@ -2260,7 +2263,7 @@ ExecInitAgg(Agg *node, EState *estate, int eflags)
 	}
 
 	/*
-	 * Initialize result type, slot and projection.
+	 * Initialize result type, slot and projection. nodeagg.sql
 	 */
 	ExecInitResultTupleSlotTL(&aggstate->ss.ps, &TTSOpsVirtual);
 	ExecAssignProjectionInfo(&aggstate->ss.ps, NULL);
@@ -2902,6 +2905,7 @@ ExecInitAgg(Agg *node, EState *estate, int eflags)
 
 	}
 
+    elog_node_display(LOG, "dddtest:aggstate", aggstate, false);
 	return aggstate;
 }
 

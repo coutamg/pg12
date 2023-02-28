@@ -64,6 +64,7 @@
 #include "utils/selfuncs.h"
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
+#include "nodes/print.h"
 
 
 /* GUC parameters */
@@ -1069,6 +1070,8 @@ preprocess_expression(PlannerInfo *root, Node *expr, int kind)
 		  kind == EXPRKIND_TABLEFUNC))
 		expr = flatten_join_alias_vars(root->parse, expr);
 
+    if (kind == EXPRKIND_QUAL)
+        elog_node_display(LOG, "eval_const_expressions begin", expr, false);
 	/*
 	 * Simplify constant expressions.
 	 *
@@ -1091,8 +1094,9 @@ preprocess_expression(PlannerInfo *root, Node *expr, int kind)
 	 */
 	if (kind == EXPRKIND_QUAL)
 	{
+        elog_node_display(LOG, "canonicalize qual begin", expr, false);
 		expr = (Node *) canonicalize_qual((Expr *) expr, false);
-
+        elog_node_display(LOG, "canonicalize qual end", expr, false);
 #ifdef OPTIMIZER_DEBUG
 		printf("After canonicalize_qual()\n");
 		pprint(expr);
@@ -2433,7 +2437,9 @@ preprocess_grouping_sets(PlannerInfo *root)
 	ListCell   *lc_set;
 	grouping_sets_data *gd = palloc0(sizeof(grouping_sets_data));
 
+    elog_node_display(LOG, "dddtest: groupingsets 1:", parse, false);
 	parse->groupingSets = expand_grouping_sets(parse->groupingSets, -1);
+    elog_node_display(LOG, "dddtest: groupingsets 2:", parse, false);
 
 	gd->any_hashable = false;
 	gd->unhashable_refs = NULL;
@@ -2509,6 +2515,8 @@ preprocess_grouping_sets(PlannerInfo *root)
 	}
 	else
 		sets = extract_rollup_sets(parse->groupingSets);
+
+    elog_node_display(LOG, "dddtest: sets:", sets, false);
 
 	foreach(lc_set, sets)
 	{

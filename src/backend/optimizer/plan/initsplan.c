@@ -703,13 +703,15 @@ deconstruct_jointree(PlannerInfo *root)
 	/* this is filled as we scan the jointree */
 	root->nullable_baserels = NULL;
 
+	elog_node_display(LOG, "deconstruct_jointree input parse", root->parse, false);
+
 	result = deconstruct_recurse(root, (Node *) root->parse->jointree, false,
 								 &qualscope, &inner_join_rels,
 								 &postponed_qual_list);
 
 	/* Shouldn't be any leftover quals */
 	Assert(postponed_qual_list == NIL);
-
+    elog_node_display(LOG, "deconstruct_jointree ouput", result, false);
 	return result;
 }
 
@@ -992,11 +994,16 @@ deconstruct_recurse(PlannerInfo *root, Node *jtnode, bool below_outer_join,
 		 */
 		if (j->jointype != JOIN_INNER)
 		{
+            elog(LOG, "make_outerjoininfo left %s", bmsToString(leftids));
+            elog(LOG, "make_outerjoininfo right %s", bmsToString(rightids));
+            elog(LOG, "make_outerjoininfo inner %s", bmsToString(inner_join_rels));
+            elog_node_display(LOG, "make_outerjoininfo clause", my_quals, false);
 			sjinfo = make_outerjoininfo(root,
 										leftids, rightids,
 										*inner_join_rels,
 										j->jointype,
 										my_quals);
+            elog_node_display(LOG, "make_outerjoininfo output", sjinfo, false);
 			if (j->jointype == JOIN_SEMI)
 				ojscope = NULL;
 			else

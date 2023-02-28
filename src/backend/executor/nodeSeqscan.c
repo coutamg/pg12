@@ -25,6 +25,7 @@
  *		ExecSeqScanReInitializeDSM reinitialize DSM for fresh parallel scan
  *		ExecSeqScanInitializeWorker attach to DSM info in parallel worker
  */
+
 #include "postgres.h"
 
 #include "access/relscan.h"
@@ -32,6 +33,7 @@
 #include "executor/execdebug.h"
 #include "executor/nodeSeqscan.h"
 #include "utils/rel.h"
+#include "nodes/print.h"
 
 static TupleTableSlot *SeqNext(SeqScanState *node);
 
@@ -171,6 +173,8 @@ ExecInitSeqScan(SeqScan *node, EState *estate, int eflags)
 	scanstate->ss.ps.qual =
 		ExecInitQual(node->plan.qual, (PlanState *) scanstate);
 
+    elog_node_display(LOG, "seq plan node", node, false);
+    elog_node_display(LOG, "seq plan ps", &scanstate->ss.ps, false);
 	return scanstate;
 }
 

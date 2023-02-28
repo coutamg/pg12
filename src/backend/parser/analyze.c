@@ -45,6 +45,7 @@
 #include "parser/parsetree.h"
 #include "rewrite/rewriteManip.h"
 #include "utils/rel.h"
+#include "nodes/print.h"
 
 
 /* Hook for plugins to get control at end of parse analysis */
@@ -1200,7 +1201,7 @@ transformSelectStmt(ParseState *pstate, SelectStmt *stmt)
 	Query	   *qry = makeNode(Query);
 	Node	   *qual;
 	ListCell   *l;
-
+    elog_node_display(LOG, "select stmt", stmt, false);
 	qry->commandType = CMD_SELECT;
 
 	/* process the WITH clause independently of all else */

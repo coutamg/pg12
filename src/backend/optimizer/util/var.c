@@ -27,6 +27,7 @@
 #include "optimizer/prep.h"
 #include "parser/parsetree.h"
 #include "rewrite/rewriteManip.h"
+#include "nodes/print.h"
 
 
 typedef struct
@@ -160,7 +161,6 @@ pull_varnos_walker(Node *node, pull_varnos_context *context)
 	if (IsA(node, Var))
 	{
 		Var		   *var = (Var *) node;
-
 		if (var->varlevelsup == context->sublevels_up)
 			context->varnos = bms_add_member(context->varnos, var->varno);
 		return false;
@@ -778,6 +778,7 @@ flatten_join_alias_vars_mutator(Node *node,
 			ListCell   *ln;
 
 			attnum = 0;
+            elog_node_display(LOG, "print join alias var", rte, false);
 			Assert(list_length(rte->joinaliasvars) == list_length(rte->eref->colnames));
 			forboth(lv, rte->joinaliasvars, ln, rte->eref->colnames)
 			{
@@ -810,7 +811,7 @@ flatten_join_alias_vars_mutator(Node *node,
 			rowexpr->row_format = COERCE_IMPLICIT_CAST;
 			rowexpr->colnames = colnames;
 			rowexpr->location = var->location;
-
+            elog_node_display(LOG, "print join alias var end ", rowexpr, false);
 			return (Node *) rowexpr;
 		}
 
@@ -838,6 +839,7 @@ flatten_join_alias_vars_mutator(Node *node,
 		if (context->possible_sublink && !context->inserted_sublink)
 			context->inserted_sublink = checkExprHasSubLink(newvar);
 
+        elog_node_display(LOG, "print join alias var end ", newvar, false);
 		return newvar;
 	}
 	if (IsA(node, PlaceHolderVar))

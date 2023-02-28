@@ -1951,7 +1951,7 @@ ExecCleanTypeFromTL(List *targetList)
 {
 	return ExecTypeFromTLInternal(targetList, true);
 }
-
+/* 从 plan 的 targetlist 中构造返回结果的 tuple desc */
 static TupleDesc
 ExecTypeFromTLInternal(List *targetList, bool skipjunk)
 {

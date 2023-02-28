@@ -18,6 +18,7 @@
  */
 
 #include "postgres.h"
+#include "utils/elog.h"
 
 #include <fcntl.h>
 #include <limits.h>
@@ -1196,6 +1197,7 @@ exec_simple_query(const char *query_string)
 		}
 		PortalSetResultFormat(portal, 1, &format);
 
+        elog(LOG, "dddtest parsetree, vacuum: %d", IsA(parsetree->stmt, VacuumStmt));
 		/*
 		 * Now we can create the destination receiver object.
 		 */

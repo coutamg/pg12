@@ -37,6 +37,7 @@
 #include "parser/parse_relation.h"
 #include "parser/parsetree.h"
 #include "rewrite/rewriteManip.h"
+#include "utils/elog.h"
 
 
 /* source-code-compatibility hacks for pull_varnos() API change */
@@ -205,6 +206,10 @@ pull_up_sublinks(PlannerInfo *root)
 	Node	   *jtnode;
 	Relids		relids;
 
+	logstart("pull_up_sublinks_input");
+	elog_node_display(LOG, "parse pull_up_sublinks input", root, false);
+	logend("pull_up_sublinks_input");
+
 	/* Begin recursion through the jointree */
 	jtnode = pull_up_sublinks_jointree_recurse(root,
 											   (Node *) root->parse->jointree,
@@ -218,6 +223,9 @@ pull_up_sublinks(PlannerInfo *root)
 		root->parse->jointree = (FromExpr *) jtnode;
 	else
 		root->parse->jointree = makeFromExpr(list_make1(jtnode), NULL);
+	logstart("pull_up_sublinks_output");
+	elog_node_display(LOG, "parse pull_up_sublinks output", root, false);
+	logend("pull_up_sublinks_output");
 }
 
 /*
@@ -665,11 +673,17 @@ pull_up_subqueries(PlannerInfo *root)
 	/* Top level of jointree must always be a FromExpr */
 	Assert(IsA(root->parse->jointree, FromExpr));
 	/* Recursion starts with no containing join nor appendrel */
+	logstart("pull subquerise");
+	elog_node_display(LOG, "parse begin subquery", root, false);
+	logend("pull subqueries");
 	root->parse->jointree = (FromExpr *)
 		pull_up_subqueries_recurse(root, (Node *) root->parse->jointree,
 								   NULL, NULL, NULL);
 	/* We should still have a FromExpr */
 	Assert(IsA(root->parse->jointree, FromExpr));
+	logstart("pull subquerise");
+	elog_node_display(LOG, "parse end subquery", root, false);
+	logend("pull subqueries");
 }
 
 /*
@@ -867,6 +881,8 @@ pull_up_simple_subquery(PlannerInfo *root, Node *jtnode, RangeTblEntry *rte,
 	pullup_replace_vars_context rvcontext;
 	ListCell   *lc;
 
+	elog_node_display(LOG, "pull up simple out join", lowest_outer_join, false);
+	elog_node_display(LOG, "pull up simple null out join", lowest_nulling_outer_join, false);
 	/*
 	 * Need a modifiable copy of the subquery to hack on.  Even if we didn't
 	 * sometimes choose not to pull up below, we must do this to avoid
@@ -1429,6 +1445,10 @@ static bool
 is_simple_subquery(PlannerInfo *root, Query *subquery, RangeTblEntry *rte,
 				   JoinExpr *lowest_outer_join)
 {
+	
+	elog_node_display(LOG, "simple subquery query", subquery, false);
+	elog_node_display(LOG, "simple subquery rte", rte, false);
+	elog_node_display(LOG, "simple subquery out join", lowest_outer_join, false);
 	/*
 	 * Let's just make sure it's a valid subselect ...
 	 */
@@ -1504,7 +1524,7 @@ is_simple_subquery(PlannerInfo *root, Query *subquery, RangeTblEntry *rte,
 			restricted = false;
 			safe_upper_varnos = NULL;	/* doesn't matter */
 		}
-
+		elog(LOG, "ddd test restricted:%d, safe_upper_varnos:%s\n", restricted, bmsToString(safe_upper_varnos));
 		if (jointree_contains_lateral_outer_refs(root,
 												 (Node *) subquery->jointree,
 												 restricted, safe_upper_varnos))
@@ -2289,7 +2309,9 @@ flatten_simple_union_all(PlannerInfo *root)
 	/* Shouldn't be called unless query has setops */
 	topop = castNode(SetOperationStmt, parse->setOperations);
 	Assert(topop);
-
+	logstart("union all");
+	elog_node_display(LOG, "parse flatten union all tree", root, false);
+	logend("union all");
 	/* Can't optimize away a recursive UNION */
 	if (root->hasRecursion)
 		return;
@@ -2352,6 +2374,9 @@ flatten_simple_union_all(PlannerInfo *root)
 	 * the main invocation of pull_up_subqueries.)
 	 */
 	pull_up_union_leaf_queries((Node *) topop, root, leftmostRTI, parse, 0);
+	logstart("union all end");
+	elog_node_display(LOG, "parse flatten union all end tree", root, false);
+	logend("union all end");
 }
 
 
@@ -2396,7 +2421,9 @@ void
 reduce_outer_joins(PlannerInfo *root)
 {
 	reduce_outer_joins_state *state;
-
+	logstart("reduce outer join 1111");
+	elog_node_display(LOG, "parse input outer join", root, false);
+	logend("reduce outer join 1111");
 	/*
 	 * To avoid doing strictness checks on more quals than necessary, we want
 	 * to stop descending the jointree as soon as there are no outer joins
@@ -2407,13 +2434,26 @@ reduce_outer_joins(PlannerInfo *root)
 	 * qual clauses and changes join types as it descends the tree.
 	 */
 	state = reduce_outer_joins_pass1((Node *) root->parse->jointree);
-
+	elog(LOG, "state have outer %d, reilds: %s\n", state->contains_outer,
+					bmsToString(state->relids));
+	elog(LOG, "pase sub_state <");
+	const ListCell *lc;
+	foreach(lc, state->sub_states)
+	{
+		reduce_outer_joins_state *tmpstate = (reduce_outer_joins_state *)lfirst(lc);
+		elog(LOG, "{:contains_outer %d, :reilds: %s}," ,tmpstate->contains_outer,
+				bmsToString(tmpstate->relids));
+	}
+	elog(LOG, " > end");
 	/* planner.c shouldn't have called me if no outer joins */
 	if (state == NULL || !state->contains_outer)
 		elog(ERROR, "so where are the outer joins?");
 
 	reduce_outer_joins_pass2((Node *) root->parse->jointree,
 							 state, root, NULL, NIL, NIL);
+	logstart("reduce outer join 2222");
+	elog_node_display(LOG, "parse output outer join", root, false);
+	logend("reduce outer join 2222");
 }
 
 /*
@@ -2550,10 +2590,19 @@ reduce_outer_joins_pass2(Node *jtnode,
 		int			rtindex = j->rtindex;
 		JoinType	jointype = j->jointype;
 		reduce_outer_joins_state *left_state = linitial(state->sub_states);
+		logstart("outer join");
+		elog(LOG, "left state have outer %d, reilds: %s\n", left_state->contains_outer,
+					bmsToString(left_state->relids));
 		reduce_outer_joins_state *right_state = lsecond(state->sub_states);
+		elog(LOG, "right state have outer %d, reilds: %s\n", right_state->contains_outer,
+					bmsToString(right_state->relids));
 		List	   *local_nonnullable_vars = NIL;
 		bool		computed_local_nonnullable_vars = false;
 
+		elog(LOG, "nonnullable_rels: %s", bmsToString(nonnullable_rels));
+		elog_node_display(LOG, "nonnullable_vars", nonnullable_vars, false);
+		elog_node_display(LOG, "forced_null_vars", forced_null_vars, false);
+		logend("outer join");
 		/* Can we simplify this join? */
 		switch (jointype)
 		{

@@ -46,7 +46,7 @@
 #include "utils/datum.h"
 #include "utils/lsyscache.h"
 #include "utils/typcache.h"
-
+#include "nodes/print.h"
 
 typedef struct LastAttnumInfo
 {
@@ -221,6 +221,7 @@ ExecInitQual(List *qual, PlanState *parent)
 	state->parent = parent;
 	state->ext_params = NULL;
 
+    elog_node_display(LOG, "dddtest: scan qual: ", qual, false);
 	/* mark expression as to be used with ExecQual() */
 	state->flags = EEO_FLAG_IS_QUAL;
 

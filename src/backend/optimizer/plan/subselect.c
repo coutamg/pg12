@@ -1274,6 +1274,7 @@ convert_ANY_sublink_to_join(PlannerInfo *root, SubLink *sublink,
 	/*
 	 * However, it can't refer to anything outside available_rels.
 	 */
+	elog(LOG, "parse ANY upper varnos:%s, available:%s", bmsToString(upper_varnos), bmsToString(available_rels));
 	if (!bms_is_subset(upper_varnos, available_rels))
 		return NULL;
 
@@ -1299,6 +1300,7 @@ convert_ANY_sublink_to_join(PlannerInfo *root, SubLink *sublink,
 										makeAlias("ANY_subquery", NIL),
 										false,
 										false);
+	elog_node_display(LOG, "parse ANY RTE", rte, false);
 	parse->rtable = lappend(parse->rtable, rte);
 	rtindex = list_length(parse->rtable);
 
@@ -1332,7 +1334,7 @@ convert_ANY_sublink_to_join(PlannerInfo *root, SubLink *sublink,
 	result->quals = quals;
 	result->alias = NULL;
 	result->rtindex = 0;		/* we don't need an RTE for it */
-
+	elog_node_display(LOG, "parse ANY tree", result, false);
 	return result;
 }
 
@@ -1389,6 +1391,7 @@ convert_EXISTS_sublink_to_join(PlannerInfo *root, SubLink *sublink,
 	 * top-level plain JOIN/ON clauses, but it's probably not worth the
 	 * trouble.)
 	 */
+	elog_node_display(LOG, "parse EXIST subselect tree", subselect, false);
 	whereClause = subselect->jointree->quals;
 	subselect->jointree->quals = NULL;
 
@@ -1450,7 +1453,15 @@ convert_EXISTS_sublink_to_join(PlannerInfo *root, SubLink *sublink,
 	 * The ones <= rtoffset belong to the upper query; the ones > rtoffset do
 	 * not.
 	 */
+	logstart("parse EXIST where clause");
+	elog_node_display(LOG, "parse EXIST WHERE tree", whereClause, false);
+	logend("parse EXIST where clause");
+
+	logstart("pull varnos where clause");
 	clause_varnos = pull_varnos(root, whereClause);
+	logend("pull varnos where clause");
+
+	elog(LOG, "parse EXIST where varnos:%s", bmsToString(clause_varnos));
 	upper_varnos = NULL;
 	while ((varno = bms_first_member(clause_varnos)) >= 0)
 	{
@@ -1466,7 +1477,7 @@ convert_EXISTS_sublink_to_join(PlannerInfo *root, SubLink *sublink,
 	 */
 	if (!bms_is_subset(upper_varnos, available_rels))
 		return NULL;
-
+	elog(LOG, "parse EXIST upper varnos:%s, available:%s", bmsToString(upper_varnos), bmsToString(available_rels));
 	/* Now we can attach the modified subquery rtable to the parent */
 	parse->rtable = list_concat(parse->rtable, subselect->rtable);
 
@@ -1486,7 +1497,7 @@ convert_EXISTS_sublink_to_join(PlannerInfo *root, SubLink *sublink,
 	result->quals = whereClause;
 	result->alias = NULL;
 	result->rtindex = 0;		/* we don't need an RTE for it */
-
+	elog_node_display(LOG, "parse EXIST tree", result, false);
 	return result;
 }
 

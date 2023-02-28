@@ -239,6 +239,12 @@ extern int	getinternalerrposition(void);
 	} while(0)
 #endif							/* HAVE__BUILTIN_CONSTANT_P */
 
+#define logstart(word)	\
+	elog(LOG, "\n============= ddd test start log %s ==================\n", word)
+
+#define logend(word)	\
+	elog(LOG, "\n============= ddd test end log %s ==================\n", word)
+
 extern void elog_start(const char *filename, int lineno, const char *funcname);
 extern void elog_finish(int elevel, const char *fmt,...) pg_attribute_printf(2, 3);
 
