@@ -105,6 +105,10 @@ static void outChar(StringInfo str, char c);
 	(appendStringInfoString(str, " :" CppAsString(fldname) " "), \
 	 outNode(str, node->fldname))
 
+#define WRIITE_NODE_ARR_FIELD(fldname, idx) \
+	(appendStringInfoString(str, " :" CppAsString(fldname) " "), \
+	 outNode(str, node->fldname[idx]))
+
 /* Write a bitmapset field */
 #define WRITE_BITMAPSET_FIELD(fldname) \
 	(appendStringInfoString(str, " :" CppAsString(fldname) " "), \
@@ -2192,6 +2196,8 @@ _outPlannerInfo(StringInfo str, const PlannerInfo *node)
 	WRITE_UINT_FIELD(query_level);
 	WRITE_NODE_FIELD(plan_params);
 	WRITE_BITMAPSET_FIELD(outer_params);
+	for (int i = 0; i < node->simple_rel_array_size; ++i)
+		WRIITE_NODE_ARR_FIELD(simple_rel_array, i);
 	WRITE_BITMAPSET_FIELD(all_baserels);
 	WRITE_BITMAPSET_FIELD(nullable_baserels);
 	WRITE_NODE_FIELD(join_rel_list);

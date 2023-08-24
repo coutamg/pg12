@@ -33,6 +33,7 @@
 #include "parser/analyze.h"
 #include "rewrite/rewriteManip.h"
 #include "utils/lsyscache.h"
+#include "nodes/print.h"
 
 
 /* source-code-compatibility hacks for pull_varnos() API change */
@@ -462,6 +463,7 @@ create_lateral_join_info(PlannerInfo *root)
 	if (!root->hasLateralRTEs)
 		return;
 
+	elog_node_display(LOG, "dddtest: lateral", root, false);
 	/*
 	 * Examine all baserels (the rel array has been set up by now).
 	 */
@@ -653,6 +655,7 @@ create_lateral_join_info(PlannerInfo *root)
 				bms_add_member(brel2->lateral_referencers, rti);
 		}
 	}
+	elog_node_display(LOG, "dddtest: lateral", root, false);
 }
 
 

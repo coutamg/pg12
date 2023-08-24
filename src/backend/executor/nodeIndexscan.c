@@ -27,6 +27,7 @@
  *		ExecIndexScanReInitializeDSM reinitialize DSM for fresh scan
  *		ExecIndexScanInitializeWorker attach to DSM info in parallel worker
  */
+
 #include "postgres.h"
 
 #include "access/nbtree.h"
@@ -43,6 +44,7 @@
 #include "utils/lsyscache.h"
 #include "utils/memutils.h"
 #include "utils/rel.h"
+#include "nodes/print.h"
 
 /*
  * When an ordering operator is used, tuples fetched from the index that
@@ -915,6 +917,7 @@ ExecInitIndexScan(IndexScan *node, EState *estate, int eflags)
 	indexstate->ss.ps.state = estate;
 	indexstate->ss.ps.ExecProcNode = ExecIndexScan;
 
+	elog_node_display(LOG, "dddtest: index", node, false);
 	/*
 	 * Miscellaneous initialization
 	 *

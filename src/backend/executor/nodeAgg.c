@@ -2818,7 +2818,7 @@ ExecInitAgg(Agg *node, EState *estate, int eflags)
 			peragg->transno = existing_transno;
 		}
 		else
-		{
+		{ 
 			pertrans = &pertransstates[++transno];
 			build_pertrans_for_aggref(pertrans, aggstate, estate,
 									  aggref, transfn_oid, aggtranstype,
